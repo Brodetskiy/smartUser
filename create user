@@ -1,0 +1,35 @@
+use master;
+
+CREATE LOGIN [Login_name]   
+    WITH PASSWORD = [password];  
+
+
+use [database_name]
+CREATE USER [User_name] FOR LOGIN [Login_name]; 
+
+
+SELECT name, ROW_NUMBER() over(order by name) rn into #temp
+FROM sys.schemas
+-- where name not in ([Schema_name]) -- якщо хочете видати не на всі схеми, то можна заборонити видавати для деяких схем
+
+declare @i int = 1
+declare @query nvarchar(max)
+declare @schema nvarchar(max)
+
+while (@i <= (select max(rn) from #temp))
+    BEGIN
+        set @schema = null
+        select @schema = name
+        from #temp
+        where rn = @i
+
+        set @query = null
+        set @query = CONCAT('GRANT [your_permision] ON SCHEMA :: ',@schema, ' TO [User_name]')
+
+        exec (@query)
+
+        set @i = @i + 1
+
+    END
+
+drop table #temp
